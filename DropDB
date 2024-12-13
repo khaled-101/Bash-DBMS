@@ -1,0 +1,37 @@
+#!/usr/bin/bash 
+shopt -s extglob
+source reusable
+
+function DropDb() {
+  local database_list=$(ls  Databases/ )
+   
+  database_listz=$(echo "$database_list" | sed 's/|$//')
+
+  selected_db=$(yad --list --width=300 --height=250 \
+    --title="List of Databases" \
+    --text="Choose a DB to Drop :" \
+    --column="Databases" $database_listz)
+  
+  selected_dbz=$(echo "$selected_db" | sed 's/|$//')
+
+
+  if [ $? -eq 1 ]; then
+    DBmenu
+  fi
+
+  if [ -z "$selected_dbz" ]; then
+    DBmenu
+  fi
+  yad --question --width=400 --height=100  --text="Do you want to Drop this '$selected_dbz'?" 
+  response=$?
+  if [ $response -eq 0 ]; then
+    rm -rf "Databases/$selected_dbz"
+    yad --info --width=400 --height=100 \
+  --text="The Database has been deleted successfuly"
+  else
+    yad --info --width=400 --height=100 \
+  --text="The Database Wasnt deleted successfuly"
+    DBmenu
+  fi
+}
+DropDb

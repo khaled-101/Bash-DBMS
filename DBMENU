@@ -1,0 +1,41 @@
+#!/usr/bin/bash
+shopt -s extglob 
+
+function DBmenu() {
+    while true; do
+        choice=$(yad --list --width=600 --height=450 \
+            --title="DBMS Main Menu" \
+            --text="Please Choose An Option:" \
+            --column="What Do You Wish To Do" \
+            --column="Description" \
+            "Create a DB" "Create a new database" \
+            "List All DataBases" "List all existing databases" \
+            "Connect To A DB" "Connect to an existing database" \
+            "Drop DB" "Delete an existing database" \
+        )
+
+        # Check if Cancel/Close was clicked
+        if [ $? -eq 1 ]; then
+            echo "Goodbye!"
+            exit
+        fi
+
+        # Extract the user's choice
+        choice=$(echo "$choice" | awk -F'|' '{print $1}')
+
+        case "$choice" in
+            "Create a DB" )
+                source CreateDB ;;
+            "List All DataBases" )
+                source ListDB ;;
+            "Connect To A DB" )
+                source ConnectDB ;;
+            "Drop DB" )
+                source DropDB ;;
+            *)
+                yad --error --text="Invalid choice. Please try again." ;;
+        esac
+    done
+}
+
+DBmenu

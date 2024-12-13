@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+shopt -s extglob
+source reusable
+
+listDbs

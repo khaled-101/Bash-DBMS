@@ -1,0 +1,75 @@
+
+
+
+function check_for_empty_string {
+  if [ -z $1 ]
+  then
+    echo true
+  else
+    echo false
+  fi
+}
+function check_special_char {
+  x=$*
+  if [[ $x =~ [\!\'\"\^\\[\#\`\~\$\%\=\+\<\>\|\:\ \(\)\@\;\?\&\*\\\/]+ ]]
+  then
+    echo true
+  else
+    echo false
+  fi
+}
+function check_if_name_starts_with_number {
+  if [[ $1 =~ ^[0-9] ]]
+  then
+    echo true
+  else
+    echo false
+  fi
+}
+function check_if_dir_exists {
+	if [[ -d "$*" ]]
+	then
+		echo true
+	else
+		echo false
+	fi
+}
+function listDbs() {
+  local database_list=$(ls Databases/)
+
+  selected_db=$(yad --list --width=300 --height=250 \
+    --title="List of Databases" \
+    --text="Choose a DB to connect to:" \
+    --column="Databases" $database_list)
+
+  if [ $? -eq 1 ] || [ -z "$selected_db" ]; then
+    DBmenu
+    return
+  fi
+
+  # Clean the selected_db from any trailing '|'
+  selected_db=$(echo "$selected_db" | sed 's/|$//')
+
+  yad --question --width=400 --height=100 --text="Do you want to connect to '$selected_db'?"
+  response=$?
+
+  if [ $response -eq 0 ]; then
+    connect_to_database "$selected_db"
+  else
+    yad --info --width=400 --height=100 --text="You chose not to connect to any database."
+    DBmenu
+  fi
+}
+
+function connect_to_database() {
+  db_name="$1"
+  
+  # Clean the db_name from any trailing '|'
+  db_name=$(echo "$db_name" | sed 's/|$//')
+
+  cd "Databases/$db_name" || { echo "Failed to change directory."; return; }
+
+  zenity --info --width=400 --height=100 --text="Connected to the database: $db_name"
+  echo "Current directory: $(pwd)"
+  source ../../Table_menu $db_name
+}

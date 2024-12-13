@@ -1,0 +1,44 @@
+#!/usr/bin/bash
+
+shopt -s extglob
+source reusable
+
+function create() {
+    while true; do
+        name=$(yad --entry --width=600 --height=450 \
+            --title="Create Database" \
+            --text="Enter Database Name:")
+
+        if [ $? -eq 1 ]; then
+            echo "Goodbye!"
+            exit
+        fi
+
+        name=$(echo "$name" | awk '{ print tolower($0) }')
+        var=$(check_for_empty_string "$name")
+        if [ "$var" == true ]; then
+            yad --error --width=400 --height=100 --text="Database name cannot be empty."
+        else
+            var=$(check_special_char "$name")
+            if [ "$var" == true ]; then
+                yad --error --width=400 --height=100 --text="Database name cannot contain special characters."
+            else
+                var=$(check_if_name_starts_with_number "$name")
+                if [ "$var" == true ]; then
+                    yad --error --width=400 --height=100 --text="Database name cannot start with a number."
+                else
+                    var=$(check_if_dir_exists "$name")
+                    if [ "$var" == true ]; then
+                        yad --error --width=400 --height=100 --text="A database with the name $name already exists."
+                    else
+                        mkdir -p Databases/"$name"
+                        yad --info --width=400 --height=100 --text="Database $name has been created successfully!"
+                        break
+                    fi
+                fi
+            fi
+        fi
+    done
+}
+
+create
