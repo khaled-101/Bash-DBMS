@@ -1,58 +1,53 @@
 #!/bin/bash
 
 function Menu_Table() {
-    while
-    selected_table=$(yad --list --width=300 --height=300 \
+    while true; do
+        selected_table=$(yad --list --width=300 --height=300 \
             --title="Table Menu" \
             --text="Choose an operation for the Database '$1':" \
             --column="Options" \
-            --column="Description" \
-            "Create Table" "Create a new table in the selected database" \
-            "List Tables" "List all tables in the selected database" \
-            "Drop Table" "Delete an existing table from the selected database" \
-            "Insert Into Table" "Insert new data (rows) into a table" \
-            "Select From Table" "Query (select) data from a table" \
-            "Delete From Table" "Delete data (rows) from a table" \
-            "Update Table" "Modify existing data (rows) in a table" \
-            "Disconnect From Database" "Disconnect from the current database" \
-    )
+            "Create Table" \
+            "List Tables" \
+            "Drop Table" \
+            "Insert Into Table" \
+            "Select From Table" \
+            "Delete From Table" \
+            "Update Table" \
+            "Disconnect From Database")
+
         if [ $? -eq 1 ]; then
             cd ../..
             echo "Current directory: $(pwd)"
             DBmenu
-        else
-            case "$selected_table" in
-                "Create Table" )
-                    source ../../Create_Table $1;;
-                "List Tables" )
-                    source ../../List_Tables;;
-                "Drop Table" )
-                    source ../../Drop_Table;;
-                "Insert Into Table" )
-                    source ../../Insert_Table;;
-                "Select From Table" )
-                    source ../../Select_Table;;
-                "Delete From Table" )
-                    source ../../Delete_Data;;
-                "Update Table" )
-                    source ../../Update_Table;;
-                "Disconnect From Database" )
-                    cd ../..
-                    echo "Current directory: $(pwd)"
-                    DBmenu
-                    ;;
-                *)
-                if [ $? -eq 1 ]; then
-                    cd ../..
-                    echo "Current directory: $(pwd)"
-                    DBmenu
-                else
-                    yad --error --width=400 --height=100 --text="Invalid choice. Please try again."
-                fi
-                ;;
-            esac
+            return
         fi
-    do :; done
+        
+        selected_table=$(echo "$selected_table" | awk -F'|' '{print $1}')
+        
+        case "$selected_table" in
+            "Create Table" )
+                source ../../Create_Table $1 ;;
+            "List Tables" )
+                source ../../List_Tables ;;
+            "Drop Table" )
+                source ../../Drop_Table ;;
+            "Insert Into Table" )
+                source ../../Insert_Table ;;
+            "Select From Table" )
+                source ../../Select_Table ;;
+            "Delete From Table" )
+                source ../../Delete_Data ;;
+            "Update Table" )
+                source ../../upgui ;;
+            "Disconnect From Database" )
+                cd ../..
+                echo "Current directory: $(pwd)"
+                DBmenu
+                return ;;
+            *)
+                yad --error --width=400 --height=100 --text="Invalid choice. Please try again." ;;
+        esac
+    done
 }
 
-Menu_Table $1
+Menu_Table "$1"

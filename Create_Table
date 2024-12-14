@@ -1,0 +1,160 @@
+#!/usr/bin/bash
+source ../../reusable
+
+function createtable() {
+    while true; do
+        tablename=$(yad --entry --width=400 --height=70 \
+            --title="Create Table" \
+            --text="Enter table name:")
+
+        if [ -z "$tablename" ]; then
+            yad --error --text="Table creation cancelled or no input provided."
+            Menu_Table $1
+            return
+        fi
+
+        if [ -z "$tablename" ]; then
+            yad --error --width=400 --height=100 --text="Table name cannot be empty."
+        elif [ "$(check_special_char "$tablename")" == "true" ]; then
+            yad --error --width=400 --height=100 --text="Table name cannot contain special characters."
+        elif [ "$(check_if_name_starts_with_number "$tablename")" == "true" ]; then
+            yad --error --width=400 --height=100 --text="Table name cannot start with a number."
+        elif [ "$(check_if_dir_exists "$tablename")" == "true" ]; then
+            yad --error --width=400 --height=100 --text="A table with the name $tablename already exists."
+        else
+            break
+        fi
+
+    done
+
+    numofcolumns=$(yad --entry --width=400 --height=70 \
+        --title="Create Table $tablename" \
+        --text="Enter the number of columns:")
+
+    if [ $? -eq 1 ];then 
+    yad --error --text="Table Creation Failed"
+    Menu_Table $1
+    fi
+    checker=$(isNumber $numofcolumns)
+    if [ "$checker" == false ]; then 
+    yad --error --text="Enter a valid Number"
+    else
+        mkdir "$tablename"
+        touch "$tablename/$tablename" "$tablename/$tablename.meta"
+        echo "Table Name : $tablename" > "$tablename/$tablename.meta"
+        echo "number of columns : $numofcolumns " >> "$tablename/$tablename.meta"
+        echo -e "attribute_name:data_type:primary_key(y/n):unique(y/n):nullable(y/n)" >> "$tablename/$tablename.meta"
+        columns=()
+        data_types=()
+        primary_keys=()
+        nullable=()
+        unique=()
+        for ((i = 1; i <= numofcolumns; i++)); do
+            column_info=$(yad --form --width=300 --height=200 \
+                --title="Create Table $tablename" \
+                --text="Enter information for Column $i:" \
+                --separator="|" \
+                --field="Column Name:" \
+                --field="Nullable (y/n):" \
+                --field="Unique (y/n):")
+
+            if [ $? -eq 1 ]; then
+                yad --error --width=400 --height=100 --text="Table $tablename creation failed."
+                rm -r "$tablename"
+                Menu_Table $1
+            fi
+
+            column_name=$(echo "$column_info" | cut -d "|" -f 1)
+            is_nullable=$(echo "$column_info" | cut -d "|" -f 2)
+            is_unique=$(echo "$column_info" | cut -d "|" -f 3)
+
+            if [ -z "$column_name" ]; then
+                yad --error --width=400 --height=100 --text="Column name cannot be empty."
+                Menu_Table $1
+            elif [ "$(check_special_char "$column_name")" == "true" ]; then
+                yad --error --width=400 --height=100 --text="Column name cannot contain special characters."
+                Menu_Table $1
+            elif [ "$(check_if_name_starts_with_number "$column_name")" == "true" ]; then
+                yad --error --width=400 --height=100 --text="Column name cannot start with a number."
+                Menu_Table $1
+            fi
+
+          
+            if [[ "$is_nullable" != "y" && "$is_nullable" != "n" ]]; then
+                yad --error --width=400 --height=100 --text="Invalid value for Nullable in Column $i. Please enter 'y' or 'n'."
+                rm -r "$tablename"
+                Menu_Table $1
+            fi
+
+            if [[ "$is_unique" != "y" && "$is_unique" != "n" ]]; then
+                yad --error --width=400 --height=100 --text="Invalid value for Unique in Column $i. Please enter 'y' or 'n'."
+                rm -r "$tablename"
+                Menu_Table $1
+            fi
+
+          
+            data_type_options=("INT" "Double" "Varchar" "Email" "Password")
+            data_type=$(printf '%s\n' "${data_type_options[@]}" | yad --list --width=300 --height=350 \
+                --title="Create Table $tablename" \
+                --text="Select data type for Column $i:" \
+                --column="Data Type")
+
+            data_type=$(echo "$data_type"  | awk -F'|' '{print $1}')
+            
+            if [[ -z "$data_type" ]]; then
+                yad --error --width=400 --height=100 --text="No data type selected. Table creation aborted."
+                rm -r "$tablename"
+                Menu_Table $1
+            fi
+
+            columns+=("$column_name")
+            data_types+=("$data_type")
+            nullable+=("$is_nullable")
+            unique+=("$is_unique")
+        done
+
+
+      selected_pk_column=$(yad --list --width=300 --height=250 \
+        --title="Create Table $tablename" \
+        --text="Select the Primary Key column:" \
+        --column="Column" "${columns[@]}")
+
+      selected_pk_column=$(echo "$selected_pk_column"  | awk -F'|' '{print $1}')
+      if [ $? -eq 1 ]; then
+        yad --error --width=400 --height=100 --text="Table $tablename creation failed."
+        rm -r "$tablename"
+        Menu_Table $1
+      fi
+
+      for ((i = 0; i < ${#columns[@]}; i++)); do
+        if [ "${columns[i]}" == "$selected_pk_column" ]; then
+          primary_keys+=("y")
+        else
+          primary_keys+=("n")
+        fi
+      done
+
+      if [[ -z $selected_pk_column ]]; then
+        yad --error --width=400 --height=100 --text="No Primary Key column selected. You must select at least one Primary Key. Table creation failed."
+        rm -r "$tablename"
+        Menu_Table $1
+      fi
+
+      check_repeated_columns "${columns[@]}"
+      if [ $? -eq 0 ]; then
+        for ((i = 0; i < ${#columns[@]}; i++)); do
+          echo -e "${columns[i]}:${data_types[i]}:${primary_keys[i]}:${unique[i]}:${nullable[i]}" >> "$tablename/$tablename.meta" $([[ "${data_types[i]}" == "Enum" ]] && echo ":${formatted_enum}")
+        done
+        yad --info --width=400 --height=100 --text="Table '$tablename' created successfully!"
+      else
+        rm -r "$tablename"
+        Menu_Table $1
+      fi
+    fi
+  
+
+
+
+}
+
+createtable

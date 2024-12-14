@@ -5,13 +5,12 @@ source reusable
 
 function create() {
     while true; do
-        name=$(yad --entry --width=600 --height=450 \
+        name=$(yad --entry --width=600 --height=70 \
             --title="Create Database" \
             --text="Enter Database Name:")
 
         if [ $? -eq 1 ]; then
-            echo "Goodbye!"
-            exit
+            DBmenu
         fi
 
         name=$(echo "$name" | awk '{ print tolower($0) }')
