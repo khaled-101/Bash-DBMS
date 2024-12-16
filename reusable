@@ -1,6 +1,3 @@
-
-
-
 function check_for_empty_string {
   if [ -z $1 ]
   then
