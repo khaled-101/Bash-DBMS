@@ -5,14 +5,14 @@ source reusable
 function DropDb() {
   local database_list=$(ls  Databases/ )
    
-  database_listz=$(echo "$database_list" | sed 's/|$//')
+  database_listz=$(echo "$database_list" | awk -F'|' '{print $1}')
 
   selected_db=$(yad --list --width=300 --height=250 \
     --title="List of Databases" \
     --text="Choose a DB to Drop :" \
     --column="Databases" $database_listz)
   
-  selected_dbz=$(echo "$selected_db" | sed 's/|$//')
+  selected_dbz=$(echo "$selected_db" | awk -F'|' '{print $1}')
 
 
   if [ $? -eq 1 ]; then

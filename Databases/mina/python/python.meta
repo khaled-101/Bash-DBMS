@@ -1,0 +1,5 @@
+Table Name : python
+number of columns : 2 
+attribute_name:data_type:primary_key(y/n):unique(y/n):nullable(y/n)
+id:INT:y:y:n
+name:Varchar:n:n:n

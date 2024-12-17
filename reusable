@@ -1,6 +1,4 @@
 
-
-
 function check_for_empty_string {
   if [ -z $1 ]
   then
@@ -47,7 +45,7 @@ function listDbs() {
     return
   fi
 
-  selected_db=$(echo "$selected_db" | sed 's/|$//')
+  selected_db=$(echo "$selected_db" | awk -F'|' '{print $1}')
 
   yad --question --width=400 --height=100 --text="Do you want to connect to '$selected_db'?"
   response=$?
@@ -113,7 +111,7 @@ function check_repeated_columns {
 
   for column in "${!column_counts[@]}"; do
     if [ "${column_counts[$column]}" -gt 1 ]; then
-      zenity --error --width=400 --height=100  --text="You Can't Have 2 Columns with the Same Name"
+      yad --error --width=400 --height=100  --text="You Can't Have 2 Columns with the Same Name"
       return 1
     fi
   done
