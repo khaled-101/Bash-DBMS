@@ -90,7 +90,7 @@ function createtable() {
                 Menu_Table $1
             fi
           
-            data_type_options=("INT" "Double" "Varchar" "Email" "Password")
+            data_type_options=("INT" "Float" "Varchar" "Email" "Password")
             data_type=$(printf '%s\n' "${data_type_options[@]}" | yad --list --width=300 --height=350 \
                 --title="Create Table $tablename" \
                 --text="Select data type for Column $i:" \

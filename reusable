@@ -246,7 +246,7 @@ function data_type {
   if [[ $input =~ ^-?[0-9]+$ ]]; then
     echo "int"
   elif [[ $input =~ ^[-+]?[0-9]+\.?[0-9]*$ ]]; then
-    echo "double"
+    echo "float"
   elif [[ $input =~ $str ]]; then
     echo "varchar"
   elif [[ $input =~ $email_pattern ]]; then
