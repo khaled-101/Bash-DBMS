@@ -7,7 +7,7 @@ function check_for_empty_string {
     echo false
   fi
 }
-function check_special_char {
+function check_special_char () {
   x=$*
   if [[ $x =~ [\!\'\"\^\\[\#\`\~\$\%\=\+\<\>\|\:\ \(\)\@\;\?\&\*\\\/]+ ]]
   then
@@ -16,7 +16,7 @@ function check_special_char {
     echo false
   fi
 }
-function check_if_name_starts_with_number {
+function check_if_name_starts_with_number () {
   if [[ $1 =~ ^[0-9] ]]
   then
     echo true
@@ -25,7 +25,7 @@ function check_if_name_starts_with_number {
   fi
 }
 function check_if_dir_exists {
-	if [[ -d "$*" ]]
+	if [ -d "Databases/$*" ];
 	then
 		echo true
 	else
@@ -101,7 +101,7 @@ function isNumber {
 }
 
 function check_repeated_columns {
-  local columns=("$@")
+  columns=("$@")
 
   declare -A column_counts
 
@@ -117,4 +117,173 @@ function check_repeated_columns {
   done
 
   return 0
+}
+
+function Select_Table(){
+  local type=$1
+
+  if [ "$type" == "All" ]; then
+    Select_All
+  elif [ "$type" == "Columns" ]; then
+    Select_Selected_Columns
+  fi
+}
+
+function Select_All() {
+  current_dir=$(pwd)
+  local Dbname=$(basename "$current_dir")
+  local table_list=$(ls "$current_dir")
+  
+  selected_table=$(yad --list --width=300 --height=250  \
+    --title="List of Tables in $Dbname" \
+    --text="Choose a Table:" \
+    --column="Tables" $table_list)
+
+  if [ $? -eq 1 ]; then
+    Table_menu "$Dbname"
+  fi
+  
+  selected_table=$(echo "$selected_table" | awk -F'|' '{print $1}')
+  data_file="../$Dbname/$selected_table/$selected_table"
+  
+  headers=$(awk -F: 'NR>3 {print $1}' "$data_file.meta")
+  nfields=$(awk -F: 'NR==2 {print $2}' "$data_file.meta")
+  pk=$(awk -F: '$3 == "y" {print $1}' "$data_file.meta")
+
+  for header in $headers; do
+    printf "%-15s" "$header"
+  done
+  echo 
+  for header in $headers; do
+    printf "%-15s" "---------------"
+  done
+  echo
+  while IFS= read -r line || [[ -n "$line" ]]; do #wait for insert
+    IFS=":" read -ra fields <<< "$line"
+    for(( i=0;i<nfields;i++ ));do
+      printf "%-15s" "${fields[i]}"
+    done
+    echo
+  done < $data_file
+  
+
+}
+
+function Select_Selected_Columns() {
+  current_dir=$(pwd)
+  local Dbname=$(basename "$current_dir")
+  local table_list=$(ls "$current_dir")
+
+  selected_table=$(yad --list --width=300 --height=250  \
+      --title="List of Tables in $Dbname" \
+      --text="Choose a Table:" \
+      --column="Tables" $table_list)
+
+  if [ $? -eq 1 ]; then
+    Table_menu "$Dbname"
+  fi
+
+  selected_table=$(echo "$selected_table" | awk -F'|' '{print $1}')
+
+  local table_name="$selected_table"
+  local data_file="../$Dbname/$table_name/$table_name"
+
+  headers=$(awk -F: 'NR>3 {print $1}' "$data_file.meta")
+  nfields=$(awk -F: 'NR>3 {print NR-3":" $1}' "$data_file.meta")
+  wcl=$(awk 'END {print NR}' "$data_file")
+
+checklist_options=()
+for header in $headers; do
+  checklist_options+=(FALSE "$header")
+done
+
+selected_headers=$(yad --list --width=300 --height=250 \
+  --title="Columns" \
+  --text="Choose the Columns you want to select :" \
+  --checklist \
+  --column="Check" \
+  --column="Column" \
+  "${checklist_options[@]}")
+
+checklist_options=()
+
+if [ $? -eq 0 ]; then
+  selected_headers_arr=$(echo "$selected_headers" | sed 's/^TRUE//g' | sed 's/^FALSE//g' | tr '|' '\n' | sed '/^$/d')
+
+  f=()
+  for selected_header in $selected_headers_arr; do
+    printf "%-15s" "$selected_header"
+    index=$(echo "$nfields" | grep -n "$selected_header" | cut -d ':' -f 1)
+    f+=("$index")
+  done
+  echo
+  for header in $selected_header; do
+    printf "%-15s" "------------------------------"
+  done
+  echo  
+  mapfile -t lines < "$data_file"
+
+  for line in "${lines[@]}"; do
+    IFS=":" read -ra fields <<< "$line"
+    
+    for index in "${f[@]}"; do
+      fd=${fields[$((index-1))]}
+      printf "%-15s" "$fd"
+    done
+    echo
+  done
+fi
+}
+
+
+
+
+function data_type {
+
+  shopt -s extglob
+
+  input=$*
+  email_pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$"
+ 
+  if  [[ $input =~ ^[1-9][0-9]*$ ]]
+  then
+    echo "int"
+  elif [[ $input =~ ^[-+]?[0-9]+\.?[0-9]*$ ]]
+  then
+    echo "double"
+  elif [[ $input =~ $str ]]
+  then
+    echo "varchar"
+  elif [[ $input =~ $email_pattern ]]
+  then
+    echo "email"
+  else
+    echo "text"
+  fi
+}
+function data_type_match {
+  expected_data_type=$1
+  if [ "$expected_data_type" == "ID--Int--Auto--Inc." ]; 
+  then
+  expected_data_type="INT"
+  fi
+  lower_expected=`echo $expected_data_type | awk '{print tolower($0)}'`
+  shift
+  if [ "$lower_expected" == "password" ]; then
+    vp=$(validate_password_strength "$1")
+    if [ "$vp" == true ]; then
+        echo true
+    else
+        echo false
+    fi
+  else
+    data_type=$(data_type "$*")
+    
+    if [ "$lower_expected" == "$data_type" ]; then
+        echo true
+    else
+        echo false
+    fi
+  fi
+
 }

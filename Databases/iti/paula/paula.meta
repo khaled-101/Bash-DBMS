@@ -1,7 +1,0 @@
-Table Name : paula
-number of columns : 4 
-attribute_name:data_type:primary_key(y/n):unique(y/n):nullable(y/n)
-id:INT:n:y:n
-name:Varchar:n:n:n
-e-mail:Email:n:y:n
-password:Varchar:n:n:n

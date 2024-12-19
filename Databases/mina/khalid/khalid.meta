@@ -1,5 +1,7 @@
 Table Name : khalid
-number of columns : 2 
+number of columns : 4
 attribute_name:data_type:primary_key(y/n):unique(y/n):nullable(y/n)
 id:INT:y:y:n
 name:Varchar:n:n:n
+gender:Varchar:n:n:n
+email:Varchar:n:n:n
