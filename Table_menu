@@ -2,7 +2,7 @@
 
 function Menu_Table() {
     while true; do
-        selected_table=$(yad --list --width=300 --height=300 \
+        selected_table=$(yad --list --width=300 --height=350 \
             --title="Table Menu" \
             --text="Choose an operation for the Database '$1':" \
             --column="Options" \

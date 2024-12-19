@@ -1,0 +1,108 @@
+#!/bin/bash
+source ../../reusable
+
+function Insert_Table() {
+  current_dir=$(pwd)
+  DB_name=$(basename "$current_dir")
+  local Tables_list=$(ls "$current_dir/")
+
+  selected_tb=$(yad --list --width=300 --height=250 \
+    --title="List of Tables in $DB_name" \
+    --text="Choose a Table:" \
+    --column="Tables" $Tables_list)
+
+  if [ $? -eq 1 ]; then
+    Menu_Table "$DB_name"
+  fi
+
+  table_name=$selected_tb
+  table_name=$(echo "$selected_tb"  | awk -F'|' '{print $1}')
+
+  column_names=($(awk -F ':' 'NR > 3 {print $1}' "../$DB_name/$table_name/$table_name.meta"))
+  data_types=($(awk -F ':' 'NR > 3 {print $2}' "../$DB_name/$table_name/$table_name.meta"))
+  PKin=($(awk -F ':' 'NR > 3 {print $3}' "../$DB_name/$table_name/$table_name.meta"))
+  Uniquein=($(awk -F ':' 'NR > 3 {print $4}' "../$DB_name/$table_name/$table_name.meta"))
+  nullablen=($(awk -F ':' 'NR > 3 {print $5}' "../$DB_name/$table_name/$table_name.meta"))
+  column_data=()
+  flag=0
+  for i in "${!column_names[@]}"; do
+    column_name="${column_names[i]}"
+    echo $column_name
+    data_type="${data_types[i]}"
+    PKz="${PKin[i]}"
+    Uniquez="${Uniquein[i]}"
+    nullablez="${nullablen[i]}"
+    colzzz=($(awk -F ':' -v cn="$column_name" '$1 == cn  {print NR-3}' "../$DB_name/$table_name/$table_name.meta"))
+
+    if [[ "$data_type" == "INT" ]]; then
+      column_value=$(yad --entry  --width=400 --height=100 --title="Enter Value" --text="Enter value for $column_name (INT):")
+      rtrn=$(data_type_match "$data_type" "$column_value")
+      if [[ "$rtrn" == "true" ]]; then
+        column_data+=("$column_value")
+      else
+        yad --error --width=400 --height=100 --text="Data Type Mismatch. Expected: $data_type"
+        Insert_Table
+      fi
+    elif [[ "$data_type" == "Float" ]]; then
+      column_value=$(yad --entry --width=400 --height=100 --title="Enter Value" --text="Enter value for $column_name (Float):")
+      rtrn=$(data_type_match "$data_type" "$column_value")
+      if [[ "$rtrn" == "true" ]]; then
+        column_data+=("$column_value")
+      else
+        yad --error --width=400 --height=100 --text="Data Type Mismatch. Expected: $data_type"
+        Insert_Table
+      fi
+    elif [[ "$data_type" == "Varchar" ]]; then
+      column_value=$(yad --entry --width=400 --height=100 --title="Enter Value" --text="Enter value for $column_name (Varchar):")
+      rtrn=$(data_type_match "$data_type" "$column_value")
+      if [[ "$rtrn" == "true" ]]; then
+        column_data+=("$column_value")
+      else
+        yad --error --width=400 --height=100 --text="Data Type Mismatch. Expected: $data_type"
+        Insert_Table
+      fi
+    elif [[ "$data_type" == "Email" ]]; then
+      column_value=$(yad --entry --width=400 --height=100 --title="Enter Value" --text="Enter value for $column_name (Email):")
+      rtrn=$(data_type_match "$data_type" "$column_value")
+      if [[ "$rtrn" == "true" ]]; then
+        column_data+=("$column_value")
+      else
+        yad --error --width=400 --height=100 --text="Data Type Mismatch. Expected: $data_type"
+        Insert_Table
+      fi
+    fi
+
+    if [[ "$Uniquez" == "y" ]]; then
+      rtrn=$(check_for_unique "$colzzz" "$table_name/$table_name" "$column_value")
+      if [[ "$rtrn" == "false" ]]; then
+        yad --error --width=400 --height=100 --text="Unique constraint violation!"
+        flag=1
+        Insert_Table
+      fi
+    fi
+    if [[ -z "$column_value" && "$nullablez" != "y" ]]; then
+      yad --error --width=400 --height=100 --text="This column cannot be null! Please enter a value."
+      continue
+    fi
+    if [[ "$PKz" == "y" ]]; then
+      if [[ "$(check_for_pk "$colzzz" "$table_name/$table_name" "$column_value")" == "false" ]]; then
+        yad --error --width=400 --height=100 --text="Primary Key constraint violation!"
+        flag=1
+        Insert_Table
+      fi
+    fi
+  done
+
+  if [[ $flag -eq 0 ]]; then
+    insert_line=$(IFS=':'; echo "${column_data[*]}")
+    echo "$insert_line" >> "../$DB_name/$table_name/$table_name"
+
+    yad --info --width=400 --height=100 --text="Data inserted successfully!"
+    Menu_Table "$DB_name"
+  else
+    yad --error --width=400 --height=100 --text="Data insertion failed!"
+    Insert_Table
+  fi
+}
+
+Insert_Table
