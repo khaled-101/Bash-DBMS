@@ -1,0 +1,24 @@
+#!/bin/bash
+
+source ../../reusable
+
+function Select_Tb() {
+  current_dir=$(pwd)
+  DB_name=$(basename "$current_dir")
+  local Tables_list=$(ls "$current_dir/")
+  local type=("All" "Columns")
+  
+  type=$(yad --list \
+    --title="How do you wish to select for the $DB_name.db" \
+    --text="Choose a Method:" \
+    --column="Tables" "${type[@]}")
+    
+  type=$(echo "$type" | awk -F'|' '{print $1}')
+  
+
+  Select_Table "$type"
+
+}
+
+
+Select_Tb
