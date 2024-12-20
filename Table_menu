@@ -38,7 +38,7 @@ function Menu_Table() {
             "Delete From Table" )
                 source ../../Delete_Data ;;
             "Update Table" )
-                source ../../upgui ;;
+                source ../../Update_Table ;;
             "Disconnect From Database" )
                 cd ../..
                 echo "Current directory: $(pwd)"

@@ -239,51 +239,118 @@ fi
 
 
 function data_type {
-
   shopt -s extglob
 
   input=$*
   email_pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$"
- 
-  if  [[ $input =~ ^[1-9][0-9]*$ ]]
-  then
+  str="^[a-zA-Z0-9 ]{0,255}$"
+
+  if [[ $input =~ ^-?[0-9]+$ ]]; then
     echo "int"
-  elif [[ $input =~ ^[-+]?[0-9]+\.?[0-9]*$ ]]
-  then
+  elif [[ $input =~ ^[-+]?[0-9]+\.?[0-9]*$ ]]; then
     echo "double"
-  elif [[ $input =~ $str ]]
-  then
+  elif [[ $input =~ $str ]]; then
     echo "varchar"
-  elif [[ $input =~ $email_pattern ]]
-  then
+  elif [[ $input =~ $email_pattern ]]; then
     echo "email"
   else
     echo "text"
   fi
 }
+
 function data_type_match {
   expected_data_type=$1
-  if [ "$expected_data_type" == "ID--Int--Auto--Inc." ]; 
-  then
-  expected_data_type="INT"
-  fi
-  lower_expected=`echo $expected_data_type | awk '{print tolower($0)}'`
-  shift
-  if [ "$lower_expected" == "password" ]; then
-    vp=$(validate_password_strength "$1")
-    if [ "$vp" == true ]; then
-        echo true
-    else
-        echo false
-    fi
-  else
-    data_type=$(data_type "$*")
-    
-    if [ "$lower_expected" == "$data_type" ]; then
-        echo true
-    else
-        echo false
-    fi
-  fi
+  lower_expected=$(echo "$expected_data_type" | awk '{print tolower($0)}')
+  shift 
+  data_type=$(data_type "$*")
 
+  if [ "$lower_expected" == "$data_type" ]; then
+    echo "true"
+  else
+    echo "false"
+  fi
+}
+
+function check_for_unique {
+   
+    col=$1
+    file=$2
+    shift 2
+    data=$*
+    count=$(cat $file | cut -d ':' -f $col | grep -i ^"$data"$ | wc -l)
+    if [ $count -eq 0 ]
+    then
+        echo true
+    else
+        echo false
+    fi
+}
+
+
+function check_for_not_null {
+    input=$*
+    if [ -z "$input" ]
+    then
+        echo false    
+    else
+        echo true
+    fi
+}
+
+function check_for_pk {
+    col=$1
+    file=$2
+    shift 2
+    data=$*
+    rtrn=$(check_for_not_null $data)
+    if [ $rtrn == true ]
+    then
+        rtrn=$(check_for_unique "$col" "$file" "$data")
+        if [ "$rtrn" == true ]
+        then
+            	echo true
+	else
+		echo false
+        fi
+    else
+        echo false
+    fi
+}
+
+
+function check_if_col_exists {
+    meta_data_file=$1
+    col_name=$2
+    col_num=`cat $meta_data_file|cut -d : -f 1 |grep -n ^$col_name$`
+    if [ -z $col_num ]
+    then
+        echo "false"
+    else
+    num=`echo $col_num | cut -d : -f 1`
+    num=$((num-3))
+    echo $num
+    fi
+}
+
+function where {
+    data_file_path=$1
+    col=$2
+    cond=$3
+    shift 3
+    value=$*
+    cat $data_file_path|awk -F ":" -v col=$col -v cond=${cond} -v value="$value" '{
+    IGNORECASE=1
+    if($col == value && (cond == "==" || cond == "="))
+    {print $0;}
+    else if($col >= value && cond == ">=")
+    {print $0}
+    else if($col <= value && cond == "<=")
+    {print $0}
+    else if($col != value && cond == "!=")
+    {print $0}
+    else if($col > value && cond == ">")
+    {print $0}
+    else if($col < value && cond == "<")
+    {print $0}
+    }' 
 }
