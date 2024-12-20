@@ -43,8 +43,8 @@ function Insert_Table() {
         yad --error --width=400 --height=100 --text="Data Type Mismatch. Expected: $data_type"
         Insert_Table
       fi
-    elif [[ "$data_type" == "Double" ]]; then
-      column_value=$(yad --entry --width=400 --height=100 --title="Enter Value" --text="Enter value for $column_name (Double):")
+    elif [[ "$data_type" == "float" ]]; then
+      column_value=$(yad --entry --width=400 --height=100 --title="Enter Value" --text="Enter value for $column_name (float):")
       rtrn=$(data_type_match "$data_type" "$column_value")
       if [[ "$rtrn" == "true" ]]; then
         column_data+=("$column_value")

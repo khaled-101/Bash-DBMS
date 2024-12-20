@@ -93,7 +93,7 @@ function createtable() {
             fi
 
           
-            data_type_options=("INT" "Double" "Varchar" "Email")
+            data_type_options=("INT" "float" "Varchar" "Email")
             data_type=$(printf '%s\n' "${data_type_options[@]}" | yad --list --width=300 --height=350 \
                 --title="Create Table $tablename" \
                 --text="Select data type for Column $i:" \
