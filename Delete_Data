@@ -6,7 +6,7 @@ function Delete_Data() {
   current_dir=$(pwd)
   DB_name=$(basename "$current_dir")
   local Tables_list=$(ls "$current_dir/")
-  data_file="../$DB_name/$selected_table/$selected_table"
+ 
 
   yad --warning \
     --title="Delete Data From A Table" \
@@ -38,6 +38,7 @@ function Delete_Data() {
       if [ "$response" -eq 0 ]; then
         sed -i "\|$ltd|d" "$data_file"
         yad --info --width=400 --height=100  --text="Record Deleted Successfully"
+        SelectAllx $selected_table
         Menu_Table "$DB_name"
       else
         yad --info --width=400 --height=100  --text="You Chose Not To Delete The Record."

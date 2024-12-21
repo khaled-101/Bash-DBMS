@@ -354,3 +354,39 @@ function where {
     {print $0}
     }' 
 }
+#where min/khalid 4 == 5 > ./update.tmp
+
+function SelectAllx() {
+  
+  local table_name="$1"
+  local current_dir=$(pwd)
+  local Dbname=$(basename "$current_dir")
+  local data_file="../$Dbname/$table_name/$table_name"
+  
+  if [ ! -f "$data_file" ]; then
+    yad --error --width=400 --height=100 --text="Table $table_name does not exist." 2>/dev/null
+    return 1
+  fi
+  
+  local headers=$(awk -F: 'NR>3 {print $1}' "$data_file.meta")
+  local nfields=$(awk -F: 'NR==2 {print $2}' "$data_file.meta")
+
+  # Print the table headers
+  for header in $headers; do
+    printf "%-15s" "$header"
+  done
+  echo
+  for header in $headers; do
+    printf "%-15s" "---------------"
+  done
+  echo
+
+  # Print the table data
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    IFS=":" read -ra fields <<< "$line"
+    for ((i = 0; i < nfields; i++)); do
+      printf "%-15s" "${fields[i]}"
+    done
+    echo
+  done < "$data_file"
+}

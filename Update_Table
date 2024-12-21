@@ -1,0 +1,178 @@
+#!/bin/bash
+
+exec 2>/dev/null
+
+unset GTK_DEBUG
+
+source ../../reusable
+
+function UpdateTb {
+
+    current_dir=$(pwd)
+    DB_name=$(basename "$current_dir")
+
+    Select_All
+
+    selected_table=$(echo "$selected_table" | awk -F'|' '{print $1}')
+    table_name="$selected_table"
+    if [ $? -eq 1 ]; then
+        Menu_Table "$DB_name"
+    fi
+
+    table_name=$selected_table
+    
+    table_path=../$DB_name/$table_name
+    
+    column_names=$(awk -F: 'NR>3 {print $1}' "$table_path/$table_name.meta")
+    selected_col=$(yad --list --width=300 --height=250 \
+        --title="List of Columns in $table_name.tb" \
+        --text="Choose a Column:" \
+        --column="Column" $column_names)
+    
+    if [ $? -eq 1 ]; then
+         Menu_Table "$DB_name"
+    fi
+    
+    selected_col=$(echo "$selected_col" | awk -F'|' '{print $1}')
+    
+    
+
+    column_name=$selected_col
+
+    DT=$(awk -F: 'NR>3 && $1 == selected_col {print $2}' selected_col="$selected_col" "$table_path/$table_name.meta")
+
+   
+    if [[ "$DT" == "INT" ]]; then
+        New_val=$(yad --entry --width=400 --height=100 --title="Enter New Value" --text="Enter New Value for $column_name ($DT):")
+        rtrn=$(data_type_match $DT $New_val)
+        if [ $rtrn == true ]; then
+            new_data=$New_val
+        else
+            yad --error --width=400 --height=100 --text="Data Type Mismatch. The Expected Value Must Be: $DT"
+            UpdateTb
+        fi
+    elif [[ "$DT" == "float" ]]; then
+        New_val=$(yad --entry --width=400 --height=100 --title="Enter New Value" --text="Enter New Value for $column_name ($DT):")
+        rtrn=$(data_type_match $DT $New_val)
+        if [ $rtrn == true ]; then
+            new_data=$New_val
+        else
+            yad --error --width=400 --height=100 --text="Data Type Mismatch. The Expected Value Must Be: $DT"
+            UpdateTb
+        fi
+    elif [[ "$DT" == "Varchar" ]]; then
+        New_val=$(yad --entry --width=400 --height=100 --title="Enter New Value" --text="Enter New Value for $column_name ($DT):")
+        rtrn=$(data_type_match $DT $New_val)
+        if [ $rtrn == true ]; then
+            new_data=$New_val
+        else
+            yad --error --width=400 --height=100 --text="Data Type Mismatch. The Expected Value Must Be: $DT"
+            UpdateTb
+        fi
+    elif [[ "$DT" == "Email" ]]; then
+        New_val=$(yad --entry --width=400 --height=100 --title="Enter New Value" --text="Enter New Value for $column_name ($DT):")
+        rtrn=$(data_type_match $DT $New_val)
+        if [ $rtrn == true ]; then
+            new_data=$New_val
+        else
+            yad --error --width=400 --height=100 --text="Data Type Mismatch. The Expected Value Must Be: $DT"
+            UpdateTb
+        fi
+    fi
+
+    selected_colcond=$(yad --list --width=300 --height=250 \
+        --title="List of Columns in $table_name.tb" \
+        --text="Choose a Column (Condition):" \
+        --column="Column" $column_names) 
+
+    selected_colcond=$(echo "$selected_colcond" | awk -F'|' '{print $1}')
+
+    if [ $? -eq 1 ]; then
+        Menu_Table "$DB_name"
+    fi
+    
+    DTcond=$(awk -F: 'NR>3 && $1 == selected_col {print $2}' selected_col="$selected_colcond" "$table_path/$table_name.meta") 
+    cat $table_path/$table_name > ./update.tmp
+    operators=("==" "!=" ">" "<" ">=" "<=")
+
+    selected_op=$(yad --list --width=300 --height=250 \
+      --title="List of Operators" \
+      --text="Choose The Operator You Want To Use In The Condition:" \
+      --column="Operators" "${operators[@]}") 
+
+    if [ $? -eq 1 ]; then
+        Menu_Table "$DB_name"
+    fi
+
+    operator="$selected_op" 
+    operator=$(echo "$operator" | awk -F'|' '{print $1}')
+    value=$(yad --entry --width=400 --height=100 --title="Enter Condition Value" \
+      --text="Enter Condition value for $selected_colcond ($DTcond):")  
+
+    if [ $? -eq 1 ]; then
+      Menu_Table "$DB_name"
+    fi
+    rtrn=$(data_type_match "$DTcond" "$value")
+    if [ "$rtrn" == true ]; then
+        col_cond=$(awk -F: 'NR>3 && $1 == selected_col {print NR-3}' selected_col="$selected_colcond" "$table_path/$table_name.meta")
+
+        cond_value=$value
+        colxn=$(check_if_col_exists $table_path/$table_name.meta $column_name) 
+
+        where $table_path/$table_name $col_cond "$operator" $cond_value > ./update.tmp
+        number_of_affected_line=$(cat ./update.tmp | wc -l)
+        uniqueness_check=$(cat $table_path/$table_name.meta | awk -F : -v col=$(($colxn + 3)) '{if(NR==col && ($3=="y"||$5=="y")) print "unique"}')
+
+        if [ "$uniqueness_check" == "unique" ] && [ $number_of_affected_line -gt 1 ]; then
+            yad --error --width=400 --height=100 --text= "Unique constraint is applied on the $col_name column, try updating one value at a time"
+            rm ./update.tmp
+            UpdateTb
+        elif [ "$uniqueness_check" == "unique" ]; then
+            rtrn=$(check_for_unique "$colxn" "$table_path/$table_name" "$new_data")
+            if [ "$rtrn" == false ]; then
+                yad --error --width=400 --height=100 --text="New Value Doesn't meet Uniqueness or PK constraints"
+                rm ./update.tmp
+                UpdateTb
+            fi
+        fi
+
+        cat ./update.tmp | awk -F ":" -v new_data=$new_data -v col=$colxn 'BEGIN { OFS = ":"; ORS = "\n" }{
+            $col=new_data
+            print $0
+        }' > ./awk.tmp
+        readarray -t where_Arr < ./update.tmp
+        readarray -t modified_Arr < ./awk.tmp
+        readarray -t old_data_Arr < $table_path/$table_name
+        j=0
+
+        for((i=0;i<${#old_data_Arr[@]};i++)); do
+            data1=${old_data_Arr[i]} 
+            data2=${where_Arr[j]}
+            data3=${modified_Arr[j]}
+            
+            if [ "$data1" == "$data2" ]; then
+                echo $data3 >> tmp.txt
+                j=$((j + 1))
+            else
+                echo $data1 >> tmp.txt
+            fi
+        done
+        cat tmp.txt > $table_path/$table_name
+        if [ -f ./update.tmp ]; then
+            if [ $number_of_affected_line -ge 1 ]; then
+                rm ./update.tmp
+                yad --info --width=400 --height=100 --text="Table $table_name Updated Successfully on Col($column_name) New Value($new_data)\nNumber Of Affected rows ($number_of_affected_line) rows were Updated"
+                if [ -f ./awk.tmp ]; then rm ./awk.tmp; fi
+                if [ -f ./tmp.txt ]; then rm ./tmp.txt; fi
+                SelectAllx $table_name
+            else
+                rm ./update.tmp
+                yad --warning --width=400 --height=100 --text="Table $table_name Failed to Update. No Data was found on the given Condition($value)\nNumber Of Affected rows (0) rows were Updated"
+                if [ -f ./awk.tmp ]; then rm ./awk.tmp; fi
+                if [ -f ./tmp.txt ]; then rm ./tmp.txt; fi
+            fi
+        fi
+    fi
+}
+
+UpdateTb
