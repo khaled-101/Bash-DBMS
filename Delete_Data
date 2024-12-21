@@ -6,7 +6,6 @@ function Delete_Data() {
   current_dir=$(pwd)
   DB_name=$(basename "$current_dir")
   local Tables_list=$(ls "$current_dir/")
- 
 
   yad --warning \
     --title="Delete Data From A Table" \
