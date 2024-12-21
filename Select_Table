@@ -15,10 +15,7 @@ function Select_Tb() {
     
   type=$(echo "$type" | awk -F'|' '{print $1}')
   
-
   Select_Table "$type"
-
 }
-
 
 Select_Tb

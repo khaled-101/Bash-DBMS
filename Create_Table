@@ -78,7 +78,6 @@ function createtable() {
                 yad --error --width=400 --height=100 --text="Column name cannot start with a number."
                 Menu_Table $1
             fi
-
           
             if [[ "$is_nullable" != "y" && "$is_nullable" != "n" ]]; then
                 yad --error --width=400 --height=100 --text="Invalid value for Nullable in Column $i. Please enter 'y' or 'n'."
@@ -92,8 +91,7 @@ function createtable() {
                 Menu_Table $1
             fi
 
-          
-            data_type_options=("INT" "float" "Varchar" "Email")
+            data_type_options=("INT" "Float" "Varchar" "Email")
             data_type=$(printf '%s\n' "${data_type_options[@]}" | yad --list --width=300 --height=350 \
                 --title="Create Table $tablename" \
                 --text="Select data type for Column $i:" \
@@ -112,7 +110,6 @@ function createtable() {
             nullable+=("$is_nullable")
             unique+=("$is_unique")
         done
-
 
       selected_pk_column=$(yad --list --width=300 --height=250 \
         --title="Create Table $tablename" \
@@ -151,10 +148,6 @@ function createtable() {
         Menu_Table $1
       fi
     fi
-  
-
-
-
 }
 
 createtable

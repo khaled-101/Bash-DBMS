@@ -14,13 +14,11 @@ function DBmenu() {
             "Drop DB" "Delete an existing database" \
         )
 
-     
         if [ $? -eq 1 ]; then
             echo "Goodbye!"
             exit
         fi
 
-     
         choice=$(echo "$choice" | awk -F'|' '{print $1}')
 
         case "$choice" in

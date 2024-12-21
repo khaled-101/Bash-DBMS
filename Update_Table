@@ -7,7 +7,6 @@ unset GTK_DEBUG
 source ../../reusable
 
 function UpdateTb {
-
     current_dir=$(pwd)
     DB_name=$(basename "$current_dir")
 
@@ -35,13 +34,10 @@ function UpdateTb {
     
     selected_col=$(echo "$selected_col" | awk -F'|' '{print $1}')
     
-    
-
     column_name=$selected_col
 
     DT=$(awk -F: 'NR>3 && $1 == selected_col {print $2}' selected_col="$selected_col" "$table_path/$table_name.meta")
 
-   
     if [[ "$DT" == "INT" ]]; then
         New_val=$(yad --entry --width=400 --height=100 --title="Enter New Value" --text="Enter New Value for $column_name ($DT):")
         rtrn=$(data_type_match $DT $New_val)
@@ -51,7 +47,7 @@ function UpdateTb {
             yad --error --width=400 --height=100 --text="Data Type Mismatch. The Expected Value Must Be: $DT"
             UpdateTb
         fi
-    elif [[ "$DT" == "float" ]]; then
+    elif [[ "$DT" == "Float" ]]; then
         New_val=$(yad --entry --width=400 --height=100 --title="Enter New Value" --text="Enter New Value for $column_name ($DT):")
         rtrn=$(data_type_match $DT $New_val)
         if [ $rtrn == true ]; then
