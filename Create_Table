@@ -2,6 +2,8 @@
 source ../../reusable
 
 function createtable() {
+    current_dir=$(pwd)
+    DB_name=$(basename "$current_dir")
     while true; do
         tablename=$(yad --entry --width=400 --height=70 \
             --title="Create Table" \
@@ -17,7 +19,7 @@ function createtable() {
             yad --error --width=400 --height=100 --text="Table name cannot be empty."
         elif [ "$(check_special_char "$tablename")" == "true" ]; then
             yad --error --width=400 --height=100 --text="Table name cannot contain special characters."
-        elif [ "$(check_if_name_starts_with_number "$tablename")" == "true" ]; then
+        elif [ "$(check_if_name_starts_with_number "DB_name$tablename")" == "true" ]; then
             yad --error --width=400 --height=100 --text="Table name cannot start with a number."
         elif [ "$(check_if_dir_exists "$tablename")" == "true" ]; then
             yad --error --width=400 --height=100 --text="A table with the name $tablename already exists."

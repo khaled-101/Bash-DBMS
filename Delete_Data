@@ -43,9 +43,7 @@ function Delete_Data() {
         yad --info --width=400 --height=100  --text="You Chose Not To Delete The Record."
         Menu_Table "$DB_name"
       fi
-      
-      sed -i "/$ltd/d" "$data_file"
-      
+            
       if [ $? -eq 1 ]; then
         Menu_Table "$DB_name"
       fi

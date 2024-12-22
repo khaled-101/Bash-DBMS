@@ -26,7 +26,7 @@ function create() {
                 if [ "$var" == true ]; then
                     yad --error --width=400 --height=100 --text="Database name cannot start with a number."
                 else
-                    var=$(check_if_dir_exists "$name")
+                    var=$(check_if_dir_exists "Databases/$name")
                     if [ "$var" == true ]; then
                         yad --error --width=400 --height=100 --text="A database with the name $name already exists."
                     else

@@ -27,7 +27,7 @@ function check_if_name_starts_with_number () {
 }
 
 function check_if_dir_exists {
-	if [ -d "Databases/$*" ];
+	if [ -d "$*" ];
 	then
 		echo true
 	else
@@ -222,7 +222,7 @@ function Select_Selected_Columns() {
     printf "%-15s" "------------------------------"
   done
   echo  
-  mapfile -t lines < "$data_file"
+  readarray -t lines < "$data_file"
 
   for line in "${lines[@]}"; do
     IFS=":" read -ra fields <<< "$line"
